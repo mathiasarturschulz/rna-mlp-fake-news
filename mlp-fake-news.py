@@ -137,7 +137,7 @@ def preProcessing(path,vector_dimension=300):
 
 
 
-X, Y = preProcessing('./fake-news-dataset/train.csv')
+X, Y = preProcessing('./dataset/train.csv')
 # split into 67% for train and 33% for test
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.33)
 # preProcessing('./fake-news-dataset/train.csv')
