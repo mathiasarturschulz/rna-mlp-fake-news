@@ -4,6 +4,7 @@ import string
 import pandas as pd
 from gensim.models import Doc2Vec
 from gensim.models.doc2vec import LabeledSentence
+from gensim.models.doc2vec import TaggedDocument
 from gensim import utils
 from nltk.corpus import stopwords
 
@@ -24,32 +25,39 @@ warnings.filterwarnings("ignore")
 
 import time
 execucaoInicio = time.time()
+print('INÍCIO!')
 
 
+# Método que realiza a limpeza do texto
 def textClean(text):
-    """
-    Get rid of the non-letter and non-number characters
-    """
+    # Realiza a substituição de todos os caracteres diferentes do regex abaixo
     text = re.sub(r"[^A-Za-z0-9^,!.\/'+-=]", " ", text)
+    # Coloca o texto em lowercase e realiza um slip no espaço
     text = text.lower().split()
+    # Remover stopwords
+    # Stopword são palavras que não trazem informações relevantes sobre o seu sentido
+    # Possuem em grande quantidade e devem ser retiradas
+    # Exemplos de stopwords: “e”, “ou”, “para”
     stops = set(stopwords.words("english"))
     text = [w for w in text if not w in stops]
     text = " ".join(text)
     return (text)
 
 
+# Método responsável por realizar a limpeza do texto
 def cleanup(text):
     text = textClean(text)
+    # Retorna a string sem os caracteres de pontuação
     text = text.translate(str.maketrans("", "", string.punctuation))
     return text
 
-
+# Realiza a construção do arrau de sentenças
 def constructLabeledSentences(data):
     sentences = []
     for index, row in data.iteritems():
-        sentences.append(LabeledSentence(utils.to_unicode(row).split(), ['Text' + '_%s' % str(index)]))
-        #if index == 1:
-         #   print(row, sentences)
+        sentences.append(TaggedDocument(utils.to_unicode(row).split(), [str(index)]))
+        # if index == 1:
+        #    print(row, sentences)
     return sentences
 
 
@@ -58,76 +66,98 @@ def preProcessing(path,vector_dimension=300):
     Generate Doc2Vec training and testing data
     """
     data = pd.read_csv(path)
-    data = data.iloc[0:50, [0, 1, 2, 3, 4]]
+    data = data.iloc[:, [3, 4]]
+    # print(data.head())
+    # print(len(data))
 
-    missing_rows = []
-    for i in range(len(data)):
-        if data.loc[i, 'text'] != data.loc[i, 'text']:
-            missing_rows.append(i)
-    data = data.drop(missing_rows).reset_index().drop(['index','id'],axis=1)
+    # Dropa todas os registros que possuem campos vazios
+    data.dropna(inplace = True)
+    # Atualiza os index com as linhas removidas
+    data = data.reset_index(drop = True)
+
+    # print(data.head())
+    # print(len(data))
 
     for i in range(len(data)):
         data.loc[i, 'text'] = cleanup(data.loc[i,'text'])
 
+    print(data.head())
+    print(len(data))
+    
+
     x = constructLabeledSentences(data['text'])
+    # print(x)
     y = data['label'].values
-    #print(y)
+    # print(y)
 
-    text_model = Doc2Vec(min_count=1, window=5, vector_size=vector_dimension, sample=1e-4, negative=5, workers=7, epochs=10,
-                         seed=1)
-    text_model.build_vocab(x)
-    text_model.train(x, total_examples=text_model.corpus_count, epochs=text_model.iter)
+    # Gensim é uma biblioteca de código-fonte aberto para modelagem de tópicos não supervisionados e processamento de linguagem natural, usando o moderno aprendizado de máquina estatística. O Gensim é implementado em Python e Cython
 
-    train_size = int(0.8 * len(x))
-    test_size = len(x) - train_size
+    model = Doc2Vec (
+        min_count=1, 
+        window=5, 
+        vector_size=vector_dimension, 
+        sample=1e-4, 
+        negative=5, 
+        workers=7, 
+        epochs=10,
+        seed=1
+    )
+    model.build_vocab(x)
+    model.train(x, total_examples=model.corpus_count, epochs=model.iter)
 
-    text_train_arrays = np.zeros((train_size, vector_dimension))
-    text_test_arrays = np.zeros((test_size, vector_dimension))
-    train_labels = np.zeros(train_size)
-    test_labels = np.zeros(test_size)
+    # print(len(model.docvecs))
+    # for i in range(len(model.docvecs)):
+    #     print(model.docvecs[str(i)])
 
-    for i in range(train_size):
-        text_train_arrays[i] = text_model.docvecs['Text_' + str(i)]
-        train_labels[i] = y[i]
+    # train_size = int(0.8 * len(x))
+    # test_size = len(x) - train_size
 
-    j = 0
-    for i in range(train_size, train_size + test_size):
-        text_test_arrays[j] = text_model.docvecs['Text_' + str(i)]
-        test_labels[j] = y[i]
-        j = j + 1
+    # text_train_arrays = np.zeros((train_size, vector_dimension))
+    # text_test_arrays = np.zeros((test_size, vector_dimension))
+    # train_labels = np.zeros(train_size)
+    # test_labels = np.zeros(test_size)
 
-    return text_train_arrays, text_test_arrays, train_labels, test_labels
+    x = np.zeros((len(model.docvecs), 300), dtype=float)
+    for i in range(len(model.docvecs)):
+        x[i] = model.docvecs[str(i)]
+
+    # for i in range(train_size):
+    #     text_train_arrays[i] = model.docvecs[str(i)]
+    #     train_labels[i] = y[i]
+
+    # j = 0
+    # for i in range(train_size, train_size + test_size):
+    #     text_test_arrays[j] = model.docvecs[str(i)]
+    #     test_labels[j] = y[i]
+    #     j = j + 1
+
+    # return text_train_arrays, text_test_arrays, train_labels, test_labels
+    return x, y
 
 
 
-def plot_cmat(yte, ypred):
-    skplt.plot_confusion_matrix(yte,ypred)
-    plt.show()
 
-xtr,xte,ytr,yte = preProcessing('./fake-news-dataset/train.csv')
+X, Y = preProcessing('./fake-news-dataset/train.csv')
+# split into 67% for train and 33% for test
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.33)
+# preProcessing('./fake-news-dataset/train.csv')
 #print(xtr)
-print('\n\n\nxtr')
-print(xtr)
-print('\n\n\nxte')
-print(xte)
-print('\n\n\nytr')
-print(ytr)
-print('\n\n\nyte')
-print(yte)
+# print('\n\n\nxtr')
+# print(xtr)
+# print('\n\n\nxte')
+# print(xte)
+# print('\n\n\nytr')
+# print(ytr)
+# print('\n\n\nyte')
+# print(yte)
 
 # print(xtr + xte)
+print(len(X_train))
+print(len(X_test))
+print(len(y_train))
+print(len(y_test))
 
 
-X = np.concatenate((xtr, xte))
-Y = np.concatenate((ytr, yte))
-
-
-
-# split into 67% for train and 33% for test
-X_train = xtr
-X_test = xte
-y_train = ytr
-y_test = yte
 
 
 # Cria o modelo
@@ -181,4 +211,5 @@ print("Acurácia das Previsões: %.2f%%" % (accuracy*100))
 
 
 execucaoFim = time.time()
-print(execucaoFim - execucaoInicio)
+print('Tempo: ', (execucaoFim - execucaoInicio))
+print('FIM!')
