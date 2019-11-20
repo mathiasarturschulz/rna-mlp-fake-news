@@ -12,6 +12,9 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings("ignore")
 import time
+import matplotlib.pyplot as plt
+from matplotlib import pyplot
+from keras import backend
 
 
 # Método responsável por realizar a limpeza do texto
@@ -83,6 +86,12 @@ def getDataset(path):
     return data
 
 
+# Método responsável por realizar o cálculo do RMSE
+# https://machinelearningmastery.com/custom-metrics-deep-learning-keras-python/
+def rmse(y_true, y_pred):
+	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis = -1))
+
+
 # Criação do modelo MLP
 def createModelMLP(vector_dimension = 300):
     # Criação do modelo
@@ -91,29 +100,37 @@ def createModelMLP(vector_dimension = 300):
     model.add(Dense(8, kernel_initializer = 'uniform', activation = 'relu'))
     model.add(Dense(1, kernel_initializer = 'uniform', activation = 'sigmoid'))
     # Compilação do modelo
-    model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+    model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy', rmse, 'mape'])
     return model
 
 
 # Método responsável por realizar o treinamento da MLP
 def train(model, x_train, y_train, epochs = 150):
     # Treinamento do modelo
-    model.fit(x_train, y_train, epochs = epochs, batch_size = 10)
-    return model
+    history = model.fit(x_train, y_train, epochs = epochs, batch_size = 10)
+    return model, history
 
 
 # Método responsável por realizar a avaliação do modelo
 def test(model, x_test, y_test, x, y):
     # Avalia o modelo com os dados de teste
-    loss, accuracy = model.evaluate(x_test, y_test)
-    print("\nLoss: %.2f, Acurácia: %.2f%%" % (loss, accuracy*100))
+    loss, accuracy, rmse, mape = model.evaluate(x_test, y_test)
+    print("Loss: %.2f" % loss)
+    print("Acurácia: %.2f%%" % (accuracy*100))
+    print('MAPE: %.2f' % mape)
+    print('RMSE: %.2f' % rmse)
+    print('Pesos: ')
+    weights = model.layers[0].get_weights()[0]
+    print(weights)
+    print('Bias: ')
+    biases = model.layers[0].get_weights()[1]
+    print(biases)
 
     # Gera as previsões
     predictions = model.predict(x)
 
     # Ajusta as previsões e imprime o resultado
     rounded = [round(x[0]) for x in predictions]
-    print(rounded)
     accuracy = np.mean(rounded == y)
     print("Acurácia das Previsões: %.2f%%" % (accuracy*100))
 
@@ -134,19 +151,37 @@ data = getDataset(PATH)
 print('Tratamento dos dados...')
 x, y = dataProcessing(data, VECTOR_DIMENSION)
 
-qtdRegistros = len(x)
 
+# Divisão dos dados para treinamento e validação
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.33)
 
+# Modelo
 model = createModelMLP(VECTOR_DIMENSION)
-model = train(model, x_train, y_train, EPOCHS)
-model = test(model, x_test, y_test, x, y)
+model, history = train(model, x_train, y_train, EPOCHS)
+test(model, x_test, y_test, x, y)
 
+
+# Apresentação dos gráficos
+pyplot.plot(history.history['rmse'])
+plt.xlabel('Épocas')
+plt.ylabel('RMSE')
+pyplot.show()
+pyplot.plot(history.history['mape'])
+plt.xlabel('Épocas')
+plt.ylabel('MAPE')
+pyplot.show()
+pyplot.plot(history.history['accuracy'])
+plt.xlabel('Épocas')
+plt.ylabel('Accuracy')
+pyplot.show()
+
+# Cálculo do tempo de execução
 execucaoFim = time.time()
 tempoExecucao = (execucaoFim - execucaoInicio) / 60
 
 
 print('\n### Resultados: ')
+print('QTD registros: %i ' % len(x))
 print('Épocas: %i' % EPOCHS)
 print('Dados de teste: %.2f%%' %(TEST_SIZE * 100))
 print('Tempo de Execução: %.2f minutos' % tempoExecucao)
