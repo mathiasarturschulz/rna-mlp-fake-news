@@ -1,23 +1,13 @@
+import codecs, json, os.path, sys, time
 import numpy as np
-import re
-import string
-import pandas as pd
-from gensim.models import Doc2Vec
-from gensim.models.doc2vec import TaggedDocument
-from gensim import utils
-from nltk.corpus import stopwords
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings("ignore")
-import time
 import matplotlib.pyplot as plt
 from matplotlib import pyplot
 from keras import backend
-import codecs, json 
-import os.path
-import sys
 
 
 # Realiza a leitura do arquivo json com o dados tratados
