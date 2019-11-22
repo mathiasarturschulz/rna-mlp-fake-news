@@ -32,15 +32,42 @@ def rmse(y_true, y_pred):
 
 # Criação do modelo MLP
 def createModelMLP(vector_dimension = 300):
+    # Variáveis auxiliares para serem apresentadas no final da execução
+    # Quantidade de neurônio da camada de entrada
+    input_layer_quantity_neuron = 12
+    # Quantidade de neurônio das camadas intermediárias
+    hidden_layer_quantity_neuron = 8
+    # Quantidade de camadas intermediárias
+    hidden_layer_quantity = 1
+
     # Criação do modelo
+
+    # Camada de Entrada
     model = Sequential()
-    model.add(Dense(12, input_dim = vector_dimension, kernel_initializer = 'uniform', activation = 'relu'))
-    model.add(Dense(8, kernel_initializer = 'uniform', activation = 'relu'))
-    model.add(Dense(1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    model.add(Dense(
+        input_layer_quantity_neuron, 
+        input_dim = vector_dimension, 
+        kernel_initializer = 'uniform', 
+        activation = 'relu'
+    ))
+
+    # Camadas intermediárias
+    model.add(Dense(
+        hidden_layer_quantity_neuron, 
+        kernel_initializer = 'uniform', 
+        activation = 'relu'
+    ))
+
+    # Camada de saída
+    model.add(Dense(
+        1, 
+        kernel_initializer = 'uniform', 
+        activation = 'sigmoid'
+    ))
 
     # Compilação do modelo
     model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy', rmse, 'mape'])
-    return model
+    return model, input_layer_quantity_neuron, hidden_layer_quantity_neuron, hidden_layer_quantity
 
 
 # Método responsável por realizar o treinamento da MLP
@@ -50,7 +77,7 @@ def train(model, x_train, y_train, epochs = 150):
     return model, history
 
 
-# Método responsável por realizar a avaliação do modelo
+# Método responsável por realizar o teste do modelo
 def test(model, x_test, y_test, x, y):
     # Avalia o modelo com os dados de teste
     loss, accuracy_model, rmse, mape = model.evaluate(x_test, y_test)
@@ -73,19 +100,19 @@ TEST_SIZE = 0.33
 EPOCHS = 150
 
 execucaoInicio = time.time()
-print('### Fake News detection - Treinamento e validação da MLP\n')
+print('### Fake News detection - Treinamento e teste da MLP\n')
 
 x, y = readJson(JSON_NAME)
 if ((x is None) or (y is None)):
     print('Fim de Execução! ')
-    print('Antes de treinar a rede neural realize o tratamento dos dados! ')
+    print('Antes de treinar e testar a rede neural realize o tratamento dos dados! ')
     sys.exit()
 
 # Divisão dos dados para treinamento e validação
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.33)
 
 # Treinamento e avaliação do modelo
-model = createModelMLP(VECTOR_DIMENSION)
+model, input_layer_neuron, hidden_layer_neuron, hidden_layer_quantity = createModelMLP(VECTOR_DIMENSION)
 model, history = train(model, x_train, y_train, EPOCHS)
 loss, accuracy_model, rmse, mape, accuracy_detection = test(model, x_test, y_test, x, y)
 
@@ -101,23 +128,31 @@ print("MAPE: %.2f" % mape)
 print("RMSE: %.2f" % rmse)
 print("Acurácia Detecções: %.2f%%" % (accuracy_detection * 100))
 print("###")
-print("QTD registros avaliados: %i " % len(x))
-print("Épocas: %i" % EPOCHS)
+print("QTD registros: %i " % len(x))
+print("QTD registros treino: %i " % len(x_train))
+print("QTD registros teste: %i " % len(x_test))
 print("Dados de teste: %.2f%%" %(TEST_SIZE * 100))
+print("Épocas: %i" % EPOCHS)
+print("QTD neurônios camada de entrada: %i" % input_layer_neuron)
+print("QTD neurônios camadas intermediárias: %i" % hidden_layer_neuron)
+print("QTD de camadas intermediárias: %i" % hidden_layer_quantity)
 print("Tempo de Execução: %.2f minutos" % tempoExecucao)
 
 # Apresentação dos gráficos
 pyplot.plot(history.history['rmse'])
+plt.title('RMSE')
 plt.xlabel('Épocas')
 plt.ylabel('RMSE')
 pyplot.show()
 
 pyplot.plot(history.history['mape'])
+plt.title('MAPE')
 plt.xlabel('Épocas')
 plt.ylabel('MAPE')
 pyplot.show()
 
 pyplot.plot(history.history['accuracy'])
+plt.title('Accuracy')
 plt.xlabel('Épocas')
 plt.ylabel('Accuracy')
 pyplot.show()
