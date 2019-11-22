@@ -88,6 +88,17 @@ def getDataset(path):
     return data
 
 
+# Gravação dos dados tratados em um json
+def writeJson(x, y, file_path):
+    data = {
+        'y': y.tolist(),
+        'x': x.tolist()
+    }
+    json.dump(
+        data, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4
+    )
+
+
 
 
 PATH = './dataset/train.csv'
@@ -97,61 +108,18 @@ VECTOR_DIMENSION = 300
 execucaoInicio = time.time()
 print('### Fake News detection - Tratamento dos dados')
 
-print('Leitura do dataset...')
+print('Leitura do dataset... ')
 data = getDataset(PATH)
 
-print('Tratamento dos dados...')
+print('Tratamento dos dados... ')
 x, y = dataProcessing(data, VECTOR_DIMENSION)
 
-print(x, y)
+print('Gravando os dados tratatos no arquivo JSON... ')
+writeJson(x, y, JSON_NAME)
 
+# Cálculo do tempo de execução
+execucaoFim = time.time()
+tempoExecucao = (execucaoFim - execucaoInicio) / 60
 
-
-# Gravação dos dados tratados em um json
-b = x.tolist() # nested lists with same data, indices
-file_path = JSON_NAME ## your path variable
-json.dump(b, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4) ### this saves the array in .json format
-
-# # Gravação dos dados tratados em um json
-# b = x.tolist() # nested lists with same data, indices
-# file_path = JSON_NAME ## your path variable
-# json.dump(b, codecs.open(file_path, 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4) ### this saves the array in .json format
-
-
-# Leitura
-obj_text = codecs.open(file_path, 'r', encoding='utf-8').read()
-b_new = json.loads(obj_text)
-a_new = np.array(b_new)
-
-print(a_new)
-
-
-
-# # REALIZA A LEITURA DO JSON
-# data = None
-# with open('./data2.json') as json_file:
-#     data = json.load(json_file)
-
-# # GRAVA OS NOVOS VALORES
-# newValue = {
-#     'value': random.randint(1, 1000),
-#     'date': datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-# }
-# data['record'].append(newValue)
-# # print(json.dumps(data, indent=4))
-# print("Novos valores: ", newValue)
-
-# # GRAVA O JSON COM OS NOVOS ARQUIVOS
-# with open('./data2.json', 'w') as json_file:
-#     json.dump(data, json_file)
-
-# # Cálculo do tempo de execução
-# execucaoFim = time.time()
-# tempoExecucao = (execucaoFim - execucaoInicio) / 60
-
-
-# print('\n### Resultados: ')
-# print('QTD registros: %i ' % len(x))
-# print('Épocas: %i' % EPOCHS)
-# print('Dados de teste: %.2f%%' %(TEST_SIZE * 100))
-# print('Tempo de Execução: %.2f minutos' % tempoExecucao)
+print('Dados tratados e salvo no JSON com sucesso! ')
+print('Tempo de execução do tratamento dos dados: %.2f minutos' % tempoExecucao)
