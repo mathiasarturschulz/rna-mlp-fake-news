@@ -70,7 +70,7 @@ def dataProcessing(data, vector_dimension=300):
 def getDataset(path):
     data = pd.read_csv(path)
     # Pega as colunas 'text' e 'label'
-    data = data.iloc[0:50, [3, 4]]
+    data = data.iloc[:, [3, 4]]
     # Dropa todas os registros que possuem campos vazios
     data.dropna(inplace = True)
     # Atualiza os index com as linhas removidas
