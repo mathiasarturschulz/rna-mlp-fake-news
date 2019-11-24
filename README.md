@@ -47,19 +47,19 @@ Using TensorFlow backend.
 -- apresenta os gráficos
 
 ### Resultados: 
-Loss: 0.61
-Acurácia: 90.56%
-MAPE: 51179628.00
-RMSE: 0.10
-Acurácia Detecções: 95.92%
+Loss: 0.54
+R2: 90.18%
+MAPE: 44358336.00
+RMSE: 0.11
+R2 Detecções: 95.44%
 ###
 QTD registros: 20761 
 QTD registros treino: 13909 
 QTD registros teste: 6852 
 Dados de teste: 33.00%
-Épocas: 150
+QTD Épocas: 150
 QTD neurônios camada de entrada: 12
 QTD neurônios camadas intermediárias: 8
 QTD de camadas intermediárias: 1
-Tempo de Execução: 3.29 minutos
+Tempo de Execução: 3.38 minutos
 ```

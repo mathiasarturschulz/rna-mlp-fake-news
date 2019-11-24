@@ -85,7 +85,7 @@ def test(model, x_test, y_test, x, y):
     # Gera as detecções se cada notícia é fake ou não
     detections = model.predict(x)
 
-    # Ajusta as detecções e imprime o resultado
+    # Ajusta as detecções
     rounded = [round(x[0]) for x in detections]
     accuracy_detection = np.mean(rounded == y)
 
@@ -108,10 +108,10 @@ if ((x is None) or (y is None)):
     print('Antes de treinar e testar a rede neural realize o tratamento dos dados! ')
     sys.exit()
 
-# Divisão dos dados para treinamento e validação
+# Divisão dos dados para treinamento e teste
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.33)
 
-# Treinamento e avaliação do modelo
+# Treinamento e teste do modelo
 model, input_layer_neuron, hidden_layer_neuron, hidden_layer_quantity = createModelMLP(VECTOR_DIMENSION)
 model, history = train(model, x_train, y_train, EPOCHS)
 loss, accuracy_model, rmse, mape, accuracy_detection = test(model, x_test, y_test, x, y)
@@ -123,10 +123,10 @@ tempoExecucao = (execucaoFim - execucaoInicio) / 60
 
 print("\n\n### Resultados: ")
 print("Loss: %.2f" % loss)
-print("Acurácia: %.2f%%" % (accuracy_model * 100))
+print("R2: %.2f%%" % (accuracy_model * 100))
 print("MAPE: %.2f" % mape)
 print("RMSE: %.2f" % rmse)
-print("Acurácia Detecções: %.2f%%" % (accuracy_detection * 100))
+print("R2 Detecções: %.2f%%" % (accuracy_detection * 100))
 print("###")
 print("QTD registros: %i " % len(x))
 print("QTD registros treino: %i " % len(x_train))
@@ -140,19 +140,19 @@ print("Tempo de Execução: %.2f minutos" % tempoExecucao)
 
 # Apresentação dos gráficos
 pyplot.plot(history.history['rmse'])
-plt.title('RMSE')
+plt.title('Erro Médio Quadrático da Raiz - RMSE')
 plt.xlabel('Épocas')
 plt.ylabel('RMSE')
 pyplot.show()
 
 pyplot.plot(history.history['mape'])
-plt.title('MAPE')
+plt.title('Erro Médio Percentual Absoluto - MAPE')
 plt.xlabel('Épocas')
 plt.ylabel('MAPE')
 pyplot.show()
 
 pyplot.plot(history.history['accuracy'])
-plt.title('Accuracy')
+plt.title('Coeficiente de Determinação - R2')
 plt.xlabel('Épocas')
-plt.ylabel('Accuracy')
+plt.ylabel('R2 Detecções')
 pyplot.show()
